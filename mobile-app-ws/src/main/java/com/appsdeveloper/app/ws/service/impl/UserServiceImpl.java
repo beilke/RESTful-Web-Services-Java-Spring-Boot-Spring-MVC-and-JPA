@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.appsdeveloper.app.ws.UserRepository;
 import com.appsdeveloper.app.ws.io.entity.UserEntity;
 import com.appsdeveloper.app.ws.service.UserService;
+import com.appsdeveloper.app.ws.shared.Utils;
 import com.appsdeveloper.app.ws.shared.dto.UserDto;
 
 @Service
@@ -14,6 +15,9 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	UserRepository userRepository;
+	
+	@Autowired
+	Utils utils;
 	
 	@Override
 	public UserDto createUser(UserDto user) {
@@ -23,9 +27,9 @@ public class UserServiceImpl implements UserService {
 		UserEntity userEntity = new UserEntity();
 		BeanUtils.copyProperties(user, userEntity);
 		
-		// teste
-		userEntity.setUserId("testUserId");
-		userEntity.setEncryptedPassword("teste");
+		String publicUserId = utils.generateUserId(30);
+		userEntity.setUserId(publicUserId);
+		userEntity.setEncryptedPassword("test");
 		
 		UserEntity storedUserDetails = userRepository.save(userEntity);
 		
