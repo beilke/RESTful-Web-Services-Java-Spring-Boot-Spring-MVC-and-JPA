@@ -14,39 +14,43 @@ import com.appsdeveloper.app.ws.shared.Utils;
 import com.appsdeveloper.app.ws.shared.dto.UserDto;
 
 @Service
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements UserService
+{
 
 	@Autowired
 	UserRepository userRepository;
-	
+
 	@Autowired
 	Utils utils;
-	
+
 	@Autowired
 	BCryptPasswordEncoder bCryptPasswordEncoder;
-	
+
 	@Override
-	public UserDto createUser(UserDto user) {
-						
-		if(userRepository.findUserByEmail(user.getEmail()) != null) throw new RuntimeException("Record already exist");
-		
+	public UserDto createUser(UserDto user)
+	{
+
+		if (userRepository.findUserByEmail(user.getEmail()) != null)
+			throw new RuntimeException("Record already exist");
+
 		UserEntity userEntity = new UserEntity();
 		BeanUtils.copyProperties(user, userEntity);
-		
+
 		String publicUserId = utils.generateUserId(30);
 		userEntity.setUserId(publicUserId);
 		userEntity.setEncryptedPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-		
+
 		UserEntity storedUserDetails = userRepository.save(userEntity);
-		
+
 		UserDto returnValue = new UserDto();
 		BeanUtils.copyProperties(storedUserDetails, returnValue);
-				
+
 		return returnValue;
 	}
 
 	@Override
-	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException
+	{
 		// TODO Auto-generated method stub
 		return null;
 	}

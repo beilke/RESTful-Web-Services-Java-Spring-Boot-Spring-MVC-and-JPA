@@ -17,37 +17,42 @@ import com.appsdeveloper.app.ws.ui.model.response.UserRest;
 
 @RestController
 @RequestMapping("users") // http://localhost:8080/users
-public class UserController {
-	
+public class UserController
+{
+
 	@Autowired
 	UserService userService;
-	
+
 	@GetMapping
-	public String getUser() {
-		return "get user was called";		
+	public String getUser()
+	{
+		return "get user was called";
 	}
-	
+
 	@PostMapping
-	public UserRest createUser(@RequestBody UserDetailsRequestModel userDetails) {
+	public UserRest createUser(@RequestBody UserDetailsRequestModel userDetails)
+	{
 		UserRest returnValue = new UserRest();
-		
+
 		UserDto userDto = new UserDto();
 		BeanUtils.copyProperties(userDetails, userDto);
-		
+
 		UserDto createdUser = userService.createUser(userDto);
-		BeanUtils.copyProperties(createdUser,  returnValue);
-		
-		return returnValue;		
+		BeanUtils.copyProperties(createdUser, returnValue);
+
+		return returnValue;
 	}
-	
+
 	@PutMapping
-	public String updateUser() {
-		return "update user was called";		
+	public String updateUser()
+	{
+		return "update user was called";
 	}
-	
+
 	@DeleteMapping
-	public String deleteUser() {
-		return "delete user was called";		
+	public String deleteUser()
+	{
+		return "delete user was called";
 	}
 
 }
