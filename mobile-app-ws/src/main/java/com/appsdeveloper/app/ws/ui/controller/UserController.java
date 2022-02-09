@@ -3,6 +3,7 @@ package com.appsdeveloper.app.ws.ui.controller;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,16 +13,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.appsdeveloper.app.ws.exceptions.UserServiceException;
 import com.appsdeveloper.app.ws.service.UserService;
 import com.appsdeveloper.app.ws.shared.dto.UserDto;
 import com.appsdeveloper.app.ws.ui.model.request.UserDetailsRequestModel;
+import com.appsdeveloper.app.ws.ui.model.response.ErrorMessages;
 import com.appsdeveloper.app.ws.ui.model.response.UserRest;
 
 @RestController
 @RequestMapping("users") // http://localhost:8080/users
 public class UserController
 {
-
 	@Autowired
 	UserService userService;
 
@@ -30,6 +32,8 @@ public class UserController
 	{
 		UserRest returnValue = new UserRest();
 		
+		
+		
 		UserDto userDto = userService.getUserByUserId(id);
 		BeanUtils.copyProperties(userDto, returnValue);
 		
@@ -37,10 +41,12 @@ public class UserController
 	}
 
 	@PostMapping(consumes= {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE}, produces= {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
-	public UserRest createUser(@RequestBody UserDetailsRequestModel userDetails)
+	public UserRest createUser(@RequestBody UserDetailsRequestModel userDetails) 
 	{
 		UserRest returnValue = new UserRest();
-
+			
+		if(userDetails.getFirstName().isEmpty()) throw new UserServiceException(ErrorMessages.MISSING_REQUIRED_FIELD.getErrorMessage());
+				
 		UserDto userDto = new UserDto();
 		BeanUtils.copyProperties(userDetails, userDto);
 
