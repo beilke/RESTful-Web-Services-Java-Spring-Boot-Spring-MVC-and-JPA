@@ -23,7 +23,7 @@ public class AppExceptionsHandler
 	{
 		String message = ex.getMessage();
 
-		LOGGER.error("Business Exception: ", ex);
+		LOGGER.error("Business Exception: "+ex.getMessage(), ex);
 
 		ErrorMessage errorMessage = new ErrorMessage(new Date(), message, ex);
 
@@ -35,7 +35,7 @@ public class AppExceptionsHandler
 	{
 		String message = ex.getMessage();
 
-		LOGGER.error(message, ex);
+		LOGGER.error("Application Exception: "+message, ex);
 
 		ErrorMessage errorMessage = new ErrorMessage(new Date(), ex.getMessage(), ex);
 

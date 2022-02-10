@@ -17,6 +17,8 @@ import br.com.beilke.app.ws.service.UserService;
 import br.com.beilke.app.ws.shared.dto.UserDto;
 import br.com.beilke.app.ws.ui.model.request.UserDetailsRequestModel;
 import br.com.beilke.app.ws.ui.model.response.ErrorMessages;
+import br.com.beilke.app.ws.ui.model.response.OperationStatusModel;
+import br.com.beilke.app.ws.ui.model.response.RequestOperationStatus;
 import br.com.beilke.app.ws.ui.model.response.UserRest;
 
 @RestController
@@ -74,21 +76,15 @@ public class UserController
 		return returnValue;
 	}
 
-	@DeleteMapping(path = "/{id}", consumes = { MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE }, produces = {
-			MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE })
-	public UserRest deleteUser(@PathVariable String id, @RequestBody UserDetailsRequestModel userDetails)
+	@DeleteMapping(path = "/{id}", produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE })
+	public OperationStatusModel deleteUser(@PathVariable String id)
 	{
-		UserRest returnValue = new UserRest();
+		OperationStatusModel returnValue = new OperationStatusModel();
+		returnValue.setOperationName(RequestOperationName.DELETE.name());
 
-		if (userDetails.getFirstName().isEmpty())
-			throw new UserServiceException(ErrorMessages.MISSING_REQUIRED_FIELD.getErrorMessage());
+		userService.deleteUser(id);
 
-		UserDto userDto = new UserDto();
-		BeanUtils.copyProperties(userDetails, userDto);
-
-		UserDto deletedUser = userService.deleteUser(id, userDto);
-		BeanUtils.copyProperties(deletedUser, returnValue);
-
+		returnValue.setOperationResult(RequestOperationStatus.SUCCESS.name());
 		return returnValue;
 	}
 

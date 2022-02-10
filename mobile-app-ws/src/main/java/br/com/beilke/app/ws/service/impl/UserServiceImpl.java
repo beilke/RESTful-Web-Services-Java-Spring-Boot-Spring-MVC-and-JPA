@@ -23,9 +23,6 @@ import br.com.beilke.app.ws.ui.model.response.ErrorMessages;
 @Service
 public class UserServiceImpl implements UserService
 {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceImpl.class);
-
 	@Autowired
 	UserRepository userRepository;
 
@@ -39,7 +36,7 @@ public class UserServiceImpl implements UserService
 	public UserDto createUser(UserDto user)
 	{
 		if (userRepository.findUserByEmail(user.getEmail()) != null)
-			LOGGER.warn("Record already exist");
+			throw new UserServiceException(ErrorMessages.RECORD_ALREADY_EXISTS.getErrorMessage());
 
 		UserEntity userEntity = new UserEntity();
 		BeanUtils.copyProperties(user, userEntity);
@@ -62,7 +59,7 @@ public class UserServiceImpl implements UserService
 		UserEntity userEntity = userRepository.findUserByEmail(username);
 
 		if (userEntity == null)
-			throw new UsernameNotFoundException(username);
+			throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
 
 		return new User(userEntity.getEmail(), userEntity.getEncryptedPassword(), new ArrayList<>());
 	}
@@ -73,8 +70,8 @@ public class UserServiceImpl implements UserService
 		UserEntity userEntity = userRepository.findUserByEmail(email);
 
 		if (userEntity == null)
-			throw new UsernameNotFoundException(email);
-
+			throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
+		
 		UserDto returnValue = new UserDto();
 		BeanUtils.copyProperties(userEntity, returnValue);
 
@@ -87,7 +84,7 @@ public class UserServiceImpl implements UserService
 		UserEntity userEntity = userRepository.findUserByUserId(id);
 
 		if (userEntity == null)
-			throw new UsernameNotFoundException(id);
+			throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
 
 		UserDto returnValue = new UserDto();
 		BeanUtils.copyProperties(userEntity, returnValue);
@@ -115,7 +112,7 @@ public class UserServiceImpl implements UserService
 	}
 
 	@Override
-	public UserDto deleteUser(String id, UserDto userDto)
+	public void deleteUser(String id)
 	{
 		UserEntity userEntity = userRepository.findUserByUserId(id);
 
@@ -123,8 +120,6 @@ public class UserServiceImpl implements UserService
 			throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
 
 		userRepository.delete(userEntity);
-
-		return null;
 	}
 
 }
