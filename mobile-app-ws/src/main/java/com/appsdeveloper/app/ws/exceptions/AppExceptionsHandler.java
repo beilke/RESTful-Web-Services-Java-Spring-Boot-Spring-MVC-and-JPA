@@ -2,6 +2,8 @@ package com.appsdeveloper.app.ws.exceptions;
 
 import java.util.Date;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,11 +16,16 @@ import com.appsdeveloper.app.ws.ui.model.response.ErrorMessage;
 @ControllerAdvice
 public class AppExceptionsHandler
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(AppExceptionsHandler.class);
+			
 	@ExceptionHandler(value= {UserServiceException.class})
 	public ResponseEntity<Object> handleUserServiceException(UserServiceException ex, WebRequest request)
 	{
-		//ErrorMessage errorMessage = new ErrorMessage(new Date(), ex.getMessage());
-		ErrorMessage errorMessage = new ErrorMessage(new Date(), ex.getMessage(), ex);
+		String message = ex.getMessage();
+		
+		LOGGER.error("Business Exception: ",ex);		
+		
+		ErrorMessage errorMessage = new ErrorMessage(new Date(), message, ex);
 		
 		return new ResponseEntity<>(errorMessage, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
 	}
@@ -26,7 +33,10 @@ public class AppExceptionsHandler
 	@ExceptionHandler(value= {Exception.class})
 	public ResponseEntity<Object> handleOtherExceptions(Exception ex, WebRequest request)
 	{
-		//ErrorMessage errorMessage = new ErrorMessage(new Date(), ex.getMessage());
+		String message = ex.getMessage();
+		
+		LOGGER.error(message, ex);		
+		
 		ErrorMessage errorMessage = new ErrorMessage(new Date(), ex.getMessage(), ex);
 		
 		return new ResponseEntity<>(errorMessage, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
