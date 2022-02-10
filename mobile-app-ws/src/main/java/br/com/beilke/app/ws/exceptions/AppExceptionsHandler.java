@@ -23,7 +23,7 @@ public class AppExceptionsHandler
 	{
 		String message = ex.getMessage();
 
-		LOGGER.error("Business Exception: "+ex.getMessage(), ex);
+		LOGGER.error("Business Exception: " + message, ex);
 
 		ErrorMessage errorMessage = new ErrorMessage(new Date(), message, ex);
 
@@ -35,9 +35,9 @@ public class AppExceptionsHandler
 	{
 		String message = ex.getMessage();
 
-		LOGGER.error("Application Exception: "+message, ex);
+		LOGGER.error("Application Exception: " + message, ex);
 
-		ErrorMessage errorMessage = new ErrorMessage(new Date(), ex.getMessage(), ex);
+		ErrorMessage errorMessage = new ErrorMessage(new Date(), message, ex);
 
 		return new ResponseEntity<>(errorMessage, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
 	}
