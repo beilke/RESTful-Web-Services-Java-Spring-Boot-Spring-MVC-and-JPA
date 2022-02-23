@@ -26,7 +26,7 @@ public class WebSecurity extends WebSecurityConfigurerAdapter
 	protected void configure(HttpSecurity http) throws Exception
 	{
 		http.csrf().disable().authorizeRequests()
-			.antMatchers(HttpMethod.POST, SecurityConstants.SIGN_UP_URL)
+			.antMatchers(HttpMethod.POST, SecurityConstants.URLS_TO_ALLOW_WITHOUT_AUTH)
 			.permitAll()
 			.anyRequest().authenticated().and().addFilter(getAuthenticationFilter());
 	}
@@ -36,10 +36,10 @@ public class WebSecurity extends WebSecurityConfigurerAdapter
 	{
 		auth.userDetailsService(userDetailsService).passwordEncoder(bCryptPasswordEncoder);
 	}
-	
+
 	public CustomAuthenticationFilter getAuthenticationFilter() throws Exception {
 	    final CustomAuthenticationFilter filter = new CustomAuthenticationFilter(authenticationManager());
-	    filter.setFilterProcessesUrl("/api/auth/login");
+	    filter.setFilterProcessesUrl(SecurityConstants.LOGIN_URL);
 	    return filter;
 	}
 

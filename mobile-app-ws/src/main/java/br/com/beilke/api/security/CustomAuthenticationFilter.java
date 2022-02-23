@@ -45,7 +45,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 	{
 		super.setAuthenticationManager(authenticationManager);
 	}
-	
+
 	public CustomAuthenticationFilter(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
     }
@@ -103,13 +103,13 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		if (token == null || !token.toLowerCase().contains(SecurityConstants.TOKEN_PREFIX.toLowerCase()))
 		{
 			LOGGER.warn("No auth token found for {}", ((HttpServletRequest) request).getServletPath());
-			super.doFilter((HttpServletRequest) request, (HttpServletResponse) response, chain);
+			super.doFilter(request, response, chain);
 			return;
 		}
 
 		UsernamePasswordAuthenticationToken authentication = getAuthentication(token);
 		SecurityContextHolder.getContext().setAuthentication(authentication);
-		super.doFilter((HttpServletRequest) request, (HttpServletResponse) response, chain);
+		super.doFilter(request, response, chain);
 	}
 
 	private UsernamePasswordAuthenticationToken getAuthentication(String token)
@@ -117,7 +117,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 		logger.warn("getAuthentication Called");
 		if (token != null)
 		{
-			token = (String) token.replace(SecurityConstants.TOKEN_PREFIX, "");
+			token = token.replace(SecurityConstants.TOKEN_PREFIX, "");
 
 			String user = Jwts.parser().setSigningKey(SecurityConstants.getTokenSecret()).parseClaimsJws(token).getBody()
 					.getSubject();

@@ -1,5 +1,7 @@
 package br.com.beilke.api.model.request;
 
+import java.util.List;
+
 public class UserDetailsRequest
 {
 
@@ -7,6 +9,7 @@ public class UserDetailsRequest
 	private String lastName;
 	private String email;
 	private String password;
+	private List<AddressRequest> addresses;
 
 	public String getFirstName()
 	{
@@ -47,5 +50,15 @@ public class UserDetailsRequest
 	{
 		this.password = password;
 	}
+
+	public List<AddressRequest> getAddresses() {
+		return addresses;
+	}
+
+	public void setAddresses(List<AddressRequest> addresses) {
+		this.addresses = addresses;
+	}
+
+
 
 }

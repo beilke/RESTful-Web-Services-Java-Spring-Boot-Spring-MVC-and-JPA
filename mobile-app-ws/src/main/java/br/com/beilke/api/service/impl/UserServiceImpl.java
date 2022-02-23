@@ -3,7 +3,7 @@ package br.com.beilke.api.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.beans.BeanUtils;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,6 +20,7 @@ import br.com.beilke.api.model.response.ErrorMessages;
 import br.com.beilke.api.repositories.UserRepository;
 import br.com.beilke.api.service.UserService;
 import br.com.beilke.api.shared.Utils;
+import br.com.beilke.api.shared.dto.AddressDTO;
 import br.com.beilke.api.shared.dto.UserDto;
 
 @Service
@@ -40,19 +41,25 @@ public class UserServiceImpl implements UserService
 		if (userRepository.findUserByEmail(user.getEmail()) != null)
 			throw new UserServiceException(ErrorMessages.RECORD_ALREADY_EXISTS.getErrorMessage());
 
-		GeneralUser userEntity = new GeneralUser();
-		BeanUtils.copyProperties(user, userEntity);
+		for(int i=0;i<user.getAddresses().size();i++)
+		{
+			AddressDTO address = user.getAddresses().get(i);
+			address.setUserDetails(user);
+			address.setAddressId(utils.generateRandomString(30));
+			user.getAddresses().set(i, address);
+		}
 
-		String publicUserId = utils.generateUserId(30);
+		ModelMapper modelMapper = new ModelMapper();
+
+		GeneralUser userEntity = modelMapper.map(user, GeneralUser.class);
+
+		String publicUserId = utils.generateRandomString(30);
 		userEntity.setUserId(publicUserId);
 		userEntity.setEncryptedPassword(bCryptPasswordEncoder.encode(user.getPassword()));
 
 		GeneralUser storedUserDetails = userRepository.save(userEntity);
 
-		UserDto returnValue = new UserDto();
-		BeanUtils.copyProperties(storedUserDetails, returnValue);
-
-		return returnValue;
+		return modelMapper.map(storedUserDetails, UserDto.class);
 	}
 
 	@Override
@@ -71,13 +78,13 @@ public class UserServiceImpl implements UserService
 	{
 		GeneralUser userEntity = userRepository.findUserByEmail(email);
 
+		ModelMapper modelMapper = new ModelMapper();
+
 		if (userEntity == null)
 			throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
 
-		UserDto returnValue = new UserDto();
-		BeanUtils.copyProperties(userEntity, returnValue);
 
-		return returnValue;
+		return modelMapper.map(userEntity, UserDto.class);
 	}
 
 	@Override
@@ -85,19 +92,20 @@ public class UserServiceImpl implements UserService
 	{
 		GeneralUser userEntity = userRepository.findUserByUserId(id);
 
+		ModelMapper modelMapper = new ModelMapper();
+
 		if (userEntity == null)
 			throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
 
-		UserDto returnValue = new UserDto();
-		BeanUtils.copyProperties(userEntity, returnValue);
-
-		return returnValue;
+		return modelMapper.map(userEntity, UserDto.class);
 	}
 
 	@Override
 	public UserDto updateUser(String id, UserDto user)
 	{
 		GeneralUser userEntity = userRepository.findUserByUserId(id);
+
+		ModelMapper modelMapper = new ModelMapper();
 
 		if (userEntity == null)
 			throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
@@ -107,10 +115,7 @@ public class UserServiceImpl implements UserService
 
 		GeneralUser storedUserDetails = userRepository.save(userEntity);
 
-		UserDto returnValue = new UserDto();
-		BeanUtils.copyProperties(storedUserDetails, returnValue);
-
-		return returnValue;
+		return modelMapper.map(storedUserDetails, UserDto.class);
 	}
 
 	@Override
@@ -127,7 +132,9 @@ public class UserServiceImpl implements UserService
 	@Override
 	public List<UserDto> getUsers(int page, int limit)
 	{
-		List<UserDto> returnValue = new ArrayList<UserDto>();
+		List<UserDto> returnValue = new ArrayList<>();
+
+		ModelMapper modelMapper = new ModelMapper();
 
 		Pageable pageableRequest = PageRequest.of(page, limit);
 
@@ -136,9 +143,7 @@ public class UserServiceImpl implements UserService
 
 		for (GeneralUser userEntity : users)
 		{
-			UserDto userDto = new UserDto();
-			BeanUtils.copyProperties(userEntity, userDto);
-			returnValue.add(userDto);
+			returnValue.add(modelMapper.map(userEntity, UserDto.class));
 		}
 
 		return returnValue;

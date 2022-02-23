@@ -1,18 +1,22 @@
 package br.com.beilke.api.model;
 
 import java.io.Serializable;
+import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 
 @Entity(name = "users")
 public class GeneralUser implements Serializable
 {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 4966100073907193404L;
 
@@ -39,6 +43,9 @@ public class GeneralUser implements Serializable
 
 	@Column(nullable = false)
 	private Boolean emailVerificationStatus = false;
+
+	@OneToMany(mappedBy = "userDetails", cascade = CascadeType.ALL, fetch=FetchType.EAGER)
+	private List<Address> addresses;
 
 	public long getId()
 	{
@@ -118,6 +125,14 @@ public class GeneralUser implements Serializable
 	public void setEmailVerificationStatus(Boolean emailVerificationStatus)
 	{
 		this.emailVerificationStatus = emailVerificationStatus;
+	}
+
+	public List<Address> getAddresses() {
+		return addresses;
+	}
+
+	public void setAddresses(List<Address> addresses) {
+		this.addresses = addresses;
 	}
 
 }
