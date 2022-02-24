@@ -5,7 +5,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 @Component
-public class AppPropertiers
+public class AppProperties
 {
 	@Autowired
 	private Environment env;

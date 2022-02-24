@@ -28,7 +28,11 @@ public class WebSecurity extends WebSecurityConfigurerAdapter
 		http.csrf().disable().authorizeRequests()
 			.antMatchers(HttpMethod.POST, SecurityConstants.URLS_TO_ALLOW_WITHOUT_AUTH)
 			.permitAll()
-			.anyRequest().authenticated().and().addFilter(getAuthenticationFilter());
+			.antMatchers(HttpMethod.GET, SecurityConstants.URLS_TO_ALLOW_WITHOUT_AUTH)
+			.permitAll()
+			.anyRequest().authenticated().and()
+			.addFilter(getAuthenticationFilter())
+			.addFilter(new AuthorizationFilter(authenticationManager()));
 	}
 
 	@Override

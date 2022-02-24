@@ -14,10 +14,6 @@ import javax.persistence.OneToMany;
 @Entity(name = "users")
 public class GeneralUser implements Serializable
 {
-
-	/**
-	 *
-	 */
 	private static final long serialVersionUID = 4966100073907193404L;
 
 	@Id
@@ -39,11 +35,12 @@ public class GeneralUser implements Serializable
 	@Column(nullable = false)
 	private String encryptedPassword;
 
+	@Column(length = 64)
 	private String emailVerificationToken;
-
+	
 	@Column(nullable = false)
 	private Boolean emailVerificationStatus = false;
-
+	
 	@OneToMany(mappedBy = "userDetails", cascade = CascadeType.ALL, fetch=FetchType.EAGER)
 	private List<Address> addresses;
 
@@ -134,5 +131,10 @@ public class GeneralUser implements Serializable
 	public void setAddresses(List<Address> addresses) {
 		this.addresses = addresses;
 	}
+
+	public String getFullName() {
+		return firstName + " " + lastName;
+	}
+	
 
 }

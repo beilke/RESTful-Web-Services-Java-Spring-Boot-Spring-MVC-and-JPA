@@ -7,7 +7,7 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import br.com.beilke.api.security.AppPropertiers;
+import br.com.beilke.api.security.AppProperties;
 
 @SpringBootApplication
 public class UranusApplication extends SpringBootServletInitializer
@@ -36,8 +36,8 @@ public class UranusApplication extends SpringBootServletInitializer
 	}
 
 	@Bean(name = "AppProperties")
-	public AppPropertiers getAppProperties()
+	public AppProperties getAppProperties()
 	{
-		return new AppPropertiers();
+		return new AppProperties();
 	}
 }

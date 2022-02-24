@@ -1,13 +1,18 @@
 package br.com.beilke.api.controller;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.mail.MessagingException;
+import javax.servlet.http.HttpServletRequest;
+
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
@@ -24,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.beilke.api.exceptions.UserServiceException;
+import br.com.beilke.api.model.PasswordResetRequest;
 import br.com.beilke.api.model.request.UserDetailsRequest;
 import br.com.beilke.api.model.response.AddressesRest;
 import br.com.beilke.api.model.response.ErrorMessages;
@@ -54,14 +60,19 @@ public class UserController {
 		return new ModelMapper().map(userDto, UserRest.class);
 	}
 
+	private String getSiteURL(HttpServletRequest request) {
+		String siteURL = request.getRequestURL().toString();
+		return siteURL.replace(request.getServletPath(), "");
+	}
+
 	@PostMapping(consumes = { MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE }, produces = {
 			MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE })
-	public UserRest createUser(@RequestBody UserDetailsRequest userDetails) {
+	public UserRest createUser(@RequestBody UserDetailsRequest userDetails, HttpServletRequest request) throws UnsupportedEncodingException, MessagingException {
 		if (userDetails.getFirstName().isEmpty())
 			throw new UserServiceException(ErrorMessages.MISSING_REQUIRED_FIELD.getErrorMessage());
 
 		UserDto userDto = new ModelMapper().map(userDetails, UserDto.class);
-		UserDto createdUser = userService.createUser(userDto);
+		UserDto createdUser = userService.createUser(userDto, getSiteURL(request));
 
 		return new ModelMapper().map(createdUser, UserRest.class);
 	}
@@ -120,20 +131,14 @@ public class UserController {
 			returnValue = new ModelMapper().map(addressesDTO, listType);
 
 			for (AddressesRest addressRest : returnValue) {
-				Link selfLink = WebMvcLinkBuilder.linkTo(UserController.class)
-						.slash(id)
-						.slash("addresses")
-						.slash(addressRest.getAddressId())
-						.withSelfRel();
+				Link selfLink = WebMvcLinkBuilder.linkTo(UserController.class).slash(id).slash("addresses")
+						.slash(addressRest.getAddressId()).withSelfRel();
 				addressRest.add(selfLink);
 			}
 		}
 
 		Link userLink = WebMvcLinkBuilder.linkTo(UserController.class).slash(id).withRel("user");
-		Link selfLink = WebMvcLinkBuilder.linkTo(UserController.class)
-				.slash(id)
-				.slash("addresses")
-				.withSelfRel();
+		Link selfLink = WebMvcLinkBuilder.linkTo(UserController.class).slash(id).slash("addresses").withSelfRel();
 
 		return CollectionModel.of(returnValue, userLink, selfLink);
 	}
@@ -149,17 +154,42 @@ public class UserController {
 		// http://localhost:8080/users/<userid>
 		Link userLink = WebMvcLinkBuilder.linkTo(UserController.class).slash(userId).withRel("user");
 
-		Link userAddressesLink = WebMvcLinkBuilder.linkTo(UserController.class)
-				.slash(userId)
-				.slash("addresses")
+		Link userAddressesLink = WebMvcLinkBuilder.linkTo(UserController.class).slash(userId).slash("addresses")
 				.withRel("addresses");
-		Link selfLink = WebMvcLinkBuilder.linkTo(UserController.class)
-				.slash(userId)
-				.slash("addresses")
-				.slash(addressId)
+		Link selfLink = WebMvcLinkBuilder.linkTo(UserController.class).slash(userId).slash("addresses").slash(addressId)
 				.withSelfRel();
 
 		return EntityModel.of(returnValue, Arrays.asList(userLink, userAddressesLink, selfLink));
+	}
+
+	// http://localhost:8080/uranus/users/password-reset-request
+	@PostMapping(path = "/password-reset-request", consumes = { MediaType.APPLICATION_XML_VALUE,
+			MediaType.APPLICATION_JSON_VALUE }, produces = { MediaType.APPLICATION_XML_VALUE,
+					MediaType.APPLICATION_JSON_VALUE })
+	public OperationStatus requestReset(@RequestBody PasswordResetRequest passwordResetRequest) {
+		OperationStatus returnValue = new OperationStatus();
+
+		boolean operationResult = userService.requestPasswordReset(passwordResetRequest.getEmail());
+
+		returnValue.setOperationName(RequestOperationName.REQUEST_PASSWORD_RESET.name());
+		returnValue.setOperationResult(RequestOperationStatus.ERROR.name());
+
+		if (operationResult)
+			returnValue.setOperationResult(RequestOperationStatus.SUCCESS.name());
+
+		return returnValue;
+	}
+	
+	@GetMapping(path = "/verify")
+	public OperationStatus verifyUser(@Param("code") String code, HttpServletRequest request) throws UnsupportedEncodingException, MessagingException {
+		OperationStatus returnValue = new OperationStatus();
+		returnValue.setOperationName(RequestOperationName.EMAIL_VERIFICATION.name());
+		if (userService.verify(code, getSiteURL(request))) {	    	
+			returnValue.setOperationResult(RequestOperationStatus.SUCCESS.name());
+	    } else {
+	    	returnValue.setOperationResult(RequestOperationStatus.ERROR.name());
+	    }
+		return returnValue;
 	}
 
 }

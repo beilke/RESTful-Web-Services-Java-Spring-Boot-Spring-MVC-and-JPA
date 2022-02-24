@@ -27,7 +27,7 @@ public class AddressServiceImpl implements AddressService{
 	public List<AddressDTO> getAddressByUserId(String id) {
 		List<AddressDTO> returnValue = new ArrayList<>();
 
-		GeneralUser userEntity = userRepository.findUserByUserId(id);
+		GeneralUser userEntity = userRepository.findByUserId(id);
 
 		if (userEntity == null)
 			return returnValue;
