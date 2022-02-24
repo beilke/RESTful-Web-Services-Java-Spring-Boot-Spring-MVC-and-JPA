@@ -27,8 +27,6 @@ public class AddressServiceImpl implements AddressService{
 	public List<AddressDTO> getAddressByUserId(String id) {
 		List<AddressDTO> returnValue = new ArrayList<>();
 
-		ModelMapper modelMapper = new ModelMapper();
-
 		GeneralUser userEntity = userRepository.findUserByUserId(id);
 
 		if (userEntity == null)
@@ -38,7 +36,7 @@ public class AddressServiceImpl implements AddressService{
 
 		for (Address address : addresses)
 		{
-			returnValue.add(modelMapper.map(address, AddressDTO.class));
+			returnValue.add(new ModelMapper().map(address, AddressDTO.class));
 		}
 
 		return returnValue;

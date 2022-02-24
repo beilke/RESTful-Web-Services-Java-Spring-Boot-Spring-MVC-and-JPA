@@ -49,9 +49,7 @@ public class UserServiceImpl implements UserService
 			user.getAddresses().set(i, address);
 		}
 
-		ModelMapper modelMapper = new ModelMapper();
-
-		GeneralUser userEntity = modelMapper.map(user, GeneralUser.class);
+		GeneralUser userEntity = new ModelMapper().map(user, GeneralUser.class);
 
 		String publicUserId = utils.generateRandomString(30);
 		userEntity.setUserId(publicUserId);
@@ -59,7 +57,7 @@ public class UserServiceImpl implements UserService
 
 		GeneralUser storedUserDetails = userRepository.save(userEntity);
 
-		return modelMapper.map(storedUserDetails, UserDto.class);
+		return new ModelMapper().map(storedUserDetails, UserDto.class);
 	}
 
 	@Override
@@ -78,13 +76,10 @@ public class UserServiceImpl implements UserService
 	{
 		GeneralUser userEntity = userRepository.findUserByEmail(email);
 
-		ModelMapper modelMapper = new ModelMapper();
-
 		if (userEntity == null)
 			throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
 
-
-		return modelMapper.map(userEntity, UserDto.class);
+		return new ModelMapper().map(userEntity, UserDto.class);
 	}
 
 	@Override
@@ -92,20 +87,16 @@ public class UserServiceImpl implements UserService
 	{
 		GeneralUser userEntity = userRepository.findUserByUserId(id);
 
-		ModelMapper modelMapper = new ModelMapper();
-
 		if (userEntity == null)
 			throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
 
-		return modelMapper.map(userEntity, UserDto.class);
+		return new ModelMapper().map(userEntity, UserDto.class);
 	}
 
 	@Override
 	public UserDto updateUser(String id, UserDto user)
 	{
 		GeneralUser userEntity = userRepository.findUserByUserId(id);
-
-		ModelMapper modelMapper = new ModelMapper();
 
 		if (userEntity == null)
 			throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
@@ -115,7 +106,7 @@ public class UserServiceImpl implements UserService
 
 		GeneralUser storedUserDetails = userRepository.save(userEntity);
 
-		return modelMapper.map(storedUserDetails, UserDto.class);
+		return new ModelMapper().map(storedUserDetails, UserDto.class);
 	}
 
 	@Override
@@ -134,8 +125,6 @@ public class UserServiceImpl implements UserService
 	{
 		List<UserDto> returnValue = new ArrayList<>();
 
-		ModelMapper modelMapper = new ModelMapper();
-
 		Pageable pageableRequest = PageRequest.of(page, limit);
 
 		Page<GeneralUser> usersPage = userRepository.findAll(pageableRequest);
@@ -143,7 +132,7 @@ public class UserServiceImpl implements UserService
 
 		for (GeneralUser userEntity : users)
 		{
-			returnValue.add(modelMapper.map(userEntity, UserDto.class));
+			returnValue.add(new ModelMapper().map(userEntity, UserDto.class));
 		}
 
 		return returnValue;
