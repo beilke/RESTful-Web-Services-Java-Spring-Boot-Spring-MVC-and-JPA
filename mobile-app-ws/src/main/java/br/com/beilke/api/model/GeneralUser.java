@@ -37,10 +37,10 @@ public class GeneralUser implements Serializable
 
 	@Column(length = 64)
 	private String emailVerificationToken;
-	
+
 	@Column(nullable = false)
 	private Boolean emailVerificationStatus = false;
-	
+
 	@OneToMany(mappedBy = "userDetails", cascade = CascadeType.ALL, fetch=FetchType.EAGER)
 	private List<Address> addresses;
 
@@ -135,6 +135,6 @@ public class GeneralUser implements Serializable
 	public String getFullName() {
 		return firstName + " " + lastName;
 	}
-	
+
 
 }

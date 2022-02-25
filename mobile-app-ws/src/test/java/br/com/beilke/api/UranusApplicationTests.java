@@ -1,10 +1,10 @@
-package br.com.beilke.app.ws;
+package br.com.beilke.api;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class MobileAppWsApplicationTests
+class UranusApplicationTests
 {
 
 	@Test

@@ -28,18 +28,18 @@ public class Utils
 
 		return new String(returnValue);
 	}
-	
+
 	public static boolean hasTokenExpired(String token)
 	{
 		Claims claims = Jwts.parser().setSigningKey(SecurityConstants.getTokenSecret())
 				.parseClaimsJws(token).getBody();
-		
+
 		Date tokenExpirationDate = claims.getExpiration();
 		Date todayDate = new Date();
-		
+
 		return tokenExpirationDate.before(todayDate);
 	}
-	
+
 	public String generateEmailVerificationToken(String userId) {
 		String token = Jwts.builder().setSubject(userId)
 				.setExpiration(new Date(System.currentTimeMillis() + SecurityConstants.EXPIRATION_TIME))

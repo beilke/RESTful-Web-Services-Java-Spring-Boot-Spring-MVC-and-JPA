@@ -18,6 +18,7 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,7 +30,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.beilke.api.exceptions.UserServiceException;
-import br.com.beilke.api.model.PasswordResetRequest;
+import br.com.beilke.api.model.request.PasswordReset;
+import br.com.beilke.api.model.request.PasswordResetRequest;
 import br.com.beilke.api.model.request.UserDetailsRequest;
 import br.com.beilke.api.model.response.AddressesRest;
 import br.com.beilke.api.model.response.ErrorMessages;
@@ -67,7 +69,8 @@ public class UserController {
 
 	@PostMapping(consumes = { MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE }, produces = {
 			MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE })
-	public UserRest createUser(@RequestBody UserDetailsRequest userDetails, HttpServletRequest request) throws UnsupportedEncodingException, MessagingException {
+	public UserRest createUser(@RequestBody UserDetailsRequest userDetails, HttpServletRequest request)
+			throws UnsupportedEncodingException, MessagingException {
 		if (userDetails.getFirstName().isEmpty())
 			throw new UserServiceException(ErrorMessages.MISSING_REQUIRED_FIELD.getErrorMessage());
 
@@ -161,15 +164,27 @@ public class UserController {
 
 		return EntityModel.of(returnValue, Arrays.asList(userLink, userAddressesLink, selfLink));
 	}
+	
+	// http://localhost:8080/uranus/users/verify?code=?
+	@GetMapping(path = "/verify")
+	public OperationStatus verifyUser(@Param("code") String code)
+			throws UnsupportedEncodingException, MessagingException {
+		OperationStatus returnValue = new OperationStatus();
+		returnValue.setOperationName(RequestOperationName.EMAIL_VERIFICATION.name());
+		if (userService.verify(code)) {
+			returnValue.setOperationResult(RequestOperationStatus.SUCCESS.name());
+		} else {
+			returnValue.setOperationResult(RequestOperationStatus.ERROR.name());
+		}
+		return returnValue;
+	}
 
-	// http://localhost:8080/uranus/users/password-reset-request
-	@PostMapping(path = "/password-reset-request", consumes = { MediaType.APPLICATION_XML_VALUE,
-			MediaType.APPLICATION_JSON_VALUE }, produces = { MediaType.APPLICATION_XML_VALUE,
-					MediaType.APPLICATION_JSON_VALUE })
-	public OperationStatus requestReset(@RequestBody PasswordResetRequest passwordResetRequest) {
+	// http://localhost:8080/uranus/users/password-reset-request/email=?
+	@GetMapping(path = "/password-reset-request")
+	public OperationStatus requestReset(@Param("email") String email) throws UnsupportedEncodingException, MessagingException {
 		OperationStatus returnValue = new OperationStatus();
 
-		boolean operationResult = userService.requestPasswordReset(passwordResetRequest.getEmail());
+		boolean operationResult = userService.requestPasswordReset(email);
 
 		returnValue.setOperationName(RequestOperationName.REQUEST_PASSWORD_RESET.name());
 		returnValue.setOperationResult(RequestOperationStatus.ERROR.name());
@@ -180,15 +195,21 @@ public class UserController {
 		return returnValue;
 	}
 	
-	@GetMapping(path = "/verify")
-	public OperationStatus verifyUser(@Param("code") String code, HttpServletRequest request) throws UnsupportedEncodingException, MessagingException {
+	//http://localhost:8080/uranus/users/password-reset
+	@CrossOrigin(origins = "http://localhost:8080")
+	@PostMapping(path = "/password-reset", consumes = { MediaType.APPLICATION_XML_VALUE,
+			MediaType.APPLICATION_JSON_VALUE })
+	public OperationStatus resetPassword(@RequestBody PasswordReset passwordReset) throws UnsupportedEncodingException, MessagingException {
 		OperationStatus returnValue = new OperationStatus();
-		returnValue.setOperationName(RequestOperationName.EMAIL_VERIFICATION.name());
-		if (userService.verify(code, getSiteURL(request))) {	    	
+
+		boolean operationResult = userService.resetPassword(passwordReset.getToken(), passwordReset.getPassword());
+
+		returnValue.setOperationName(RequestOperationName.PASSWORD_RESET.name());
+		returnValue.setOperationResult(RequestOperationStatus.ERROR.name());
+
+		if (operationResult)
 			returnValue.setOperationResult(RequestOperationStatus.SUCCESS.name());
-	    } else {
-	    	returnValue.setOperationResult(RequestOperationStatus.ERROR.name());
-	    }
+
 		return returnValue;
 	}
 

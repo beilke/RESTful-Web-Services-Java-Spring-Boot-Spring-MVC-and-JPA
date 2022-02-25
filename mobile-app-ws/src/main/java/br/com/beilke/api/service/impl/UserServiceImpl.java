@@ -26,6 +26,7 @@ import br.com.beilke.api.model.PasswordResetToken;
 import br.com.beilke.api.model.response.ErrorMessages;
 import br.com.beilke.api.repositories.PasswordResetTokenRepository;
 import br.com.beilke.api.repositories.UserRepository;
+import br.com.beilke.api.security.SecurityConstants;
 import br.com.beilke.api.service.UserService;
 import br.com.beilke.api.shared.Utils;
 import br.com.beilke.api.shared.dto.AddressDTO;
@@ -71,7 +72,7 @@ public class UserServiceImpl implements UserService {
 
 		GeneralUser storedUserDetails = userRepository.save(userEntity);
 
-		sendVerificationEmail(userEntity, siteURL);
+		sendVerificationEmail(userEntity);
 
 		return new ModelMapper().map(storedUserDetails, UserDto.class);
 	}
@@ -148,7 +149,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public boolean requestPasswordReset(String email) {
+	public boolean requestPasswordReset(String email) throws UnsupportedEncodingException, MessagingException {
 		boolean returnValue = true;
 
 		GeneralUser userEntity = userRepository.findByEmail(email);
@@ -164,77 +165,60 @@ public class UserServiceImpl implements UserService {
 		passwordResetToken.setToken(token);
 		passwordResetToken.setUserDetails(userEntity);
 		passwordResetTokenRepository.save(passwordResetToken);
+		
+		MimeMessage message = buildEmail(userEntity,
+				SecurityConstants.EMAIL_PASSWORD_RESET_BODY,
+				SecurityConstants.EMAIL_PASSWORD_RESET_SUBJECT,
+				SecurityConstants.EMAIL_PASSWORD_RESET_URL + token);
 
-		// TODO logic to send email
+		mailSender.send(message);
 
 		return returnValue;
 	}
 
 	@Override
-	public void sendVerificationEmail(GeneralUser user, String siteURL)
+	public void sendVerificationEmail(GeneralUser user)
 			throws UnsupportedEncodingException, MessagingException {
-		String toAddress = user.getEmail();
-		String fromAddress = "fernando.beilke@live.com";
-		String senderName = "FBB";
-		
-		String subject = "Please verify your registration";
-		
-		String content = "Dear [[name]],<br>" 
-				+ "Please click the link below to verify your registration:<br>"
-				+ "<h3><a href=\"[[URL]]\" target=\"_self\">VERIFY</a></h3>" + "Thank you,<br>" + "FBB.";
+		MimeMessage message = buildEmail(user,
+				SecurityConstants.EMAIL_VERIFICATION_BODY,
+				SecurityConstants.EMAIL_VERIFICATION_SUBJECT,
+				SecurityConstants.EMAIL_VERIFICATION_URL + user.getEmailVerificationToken());
 
-		MimeMessage message = mailSender.createMimeMessage();
-		MimeMessageHelper helper = new MimeMessageHelper(message);
+		mailSender.send(message);
+	}
 
-		helper.setFrom(fromAddress, senderName);
-		helper.setTo(toAddress);
-		helper.setSubject(subject);
-
-		content = content.replace("[[name]]", user.getFullName());
-		String verifyURL = siteURL + "/users/verify?code=" + user.getEmailVerificationToken();
-
-		content = content.replace("[[URL]]", verifyURL);
-
-		helper.setText(content, true);
+	@Override
+	public void sendConfirmationEmail(GeneralUser user)
+			throws UnsupportedEncodingException, MessagingException {
+		MimeMessage message = buildEmail(user,
+				SecurityConstants.EMAIL_CONFIRMATION_BODY,
+				SecurityConstants.EMAIL_CONFIRMATION_SUBJECT,
+				SecurityConstants.EMAIL_CONFIRMATION_URL);
 
 		mailSender.send(message);
 
 	}
 
-	@Override
-	public void sendConfirmationEmail(GeneralUser user, String siteURL, boolean isVerified)
-			throws UnsupportedEncodingException, MessagingException {
+	private MimeMessage buildEmail(GeneralUser user, String content, String subject, String verifyURL)
+			throws MessagingException, UnsupportedEncodingException {
 		String toAddress = user.getEmail();
-		String fromAddress = "fernando.beilke@live.com";
-		String senderName = "FBB";
 
-		String subject = "Confirmation of your registration";
-
-		String content = "Dear [[name]],<br>" 
-				+ "Congratulations, your account has been verified.<br>"
-				+ "Please click the link below to login:<br>"
-				+ "<h3><a href=\"[[URL]]\" target=\"_self\">LOGIN</a></h3>" + "Thank you,<br>" + "FBB.";
-		
 		MimeMessage message = mailSender.createMimeMessage();
 		MimeMessageHelper helper = new MimeMessageHelper(message);
 
-		helper.setFrom(fromAddress, senderName);
+		helper.setFrom(SecurityConstants.EMAIL_FROMADDR, SecurityConstants.EMAIL_SENDER);
 		helper.setTo(toAddress);
 		helper.setSubject(subject);
-		
+
 		content = content.replace("[[name]]", user.getFullName());
-		String verifyURL = siteURL + "/users/login";
-
 		content = content.replace("[[URL]]", verifyURL);
-		
+
 		helper.setText(content, true);
-
-		mailSender.send(message);
-
+		return message;
 	}
 
 	@Override
-	public boolean verify(String verificationCode, String siteURL)
+	public boolean verify(String verificationCode)
 			throws UnsupportedEncodingException, MessagingException {
 		boolean isVerified = false;
 		GeneralUser user = userRepository.findByEmailVerificationToken(verificationCode);
@@ -243,11 +227,42 @@ public class UserServiceImpl implements UserService {
 			user.setEmailVerificationToken(null);
 			user.setEmailVerificationStatus(true);
 			userRepository.save(user);
-			sendConfirmationEmail(user, siteURL, isVerified);
+			sendConfirmationEmail(user);
 			isVerified = true;
 		}
 
 		return isVerified;
+	}
+
+	@Override
+	public boolean resetPassword(String token, String password) {
+		boolean returnValue = false;
+		
+		if(Utils.hasTokenExpired(token))
+			return returnValue;
+		
+		PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(token);
+		
+		if(passwordResetToken == null) {
+			return returnValue;
+		}
+		
+		// Prepare de password
+		String encodedPassword = bCryptPasswordEncoder.encode(password);
+		
+		// Update user password
+		GeneralUser userEntity = passwordResetToken.getUserDetails();
+		userEntity.setEncryptedPassword(encodedPassword);
+		GeneralUser storedUserDetails = userRepository.save(userEntity);
+		
+		// Verify if password was saved
+		if(storedUserDetails != null && storedUserDetails.getEncryptedPassword().equalsIgnoreCase(encodedPassword))
+			returnValue = true;
+		
+		// Remove password reset token from database
+		passwordResetTokenRepository.delete(passwordResetToken);
+		
+		return returnValue;
 	}
 
 }

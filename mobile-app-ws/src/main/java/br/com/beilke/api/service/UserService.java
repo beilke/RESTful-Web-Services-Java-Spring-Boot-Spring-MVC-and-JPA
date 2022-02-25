@@ -24,12 +24,14 @@ public interface UserService extends UserDetailsService
 
 	List<UserDto> getUsers(int page, int limit);
 
-	boolean requestPasswordReset(String email);
-	
-	void sendVerificationEmail(GeneralUser user, String siteURL) throws UnsupportedEncodingException, MessagingException;
-	
-	boolean verify(String verificationCode, String siteURL) throws UnsupportedEncodingException, MessagingException;
+	boolean requestPasswordReset(String email) throws UnsupportedEncodingException, MessagingException;
 
-	void sendConfirmationEmail(GeneralUser user, String siteURL, boolean isEmailConfirmed)
+	void sendVerificationEmail(GeneralUser user) throws UnsupportedEncodingException, MessagingException;
+
+	boolean verify(String verificationCode) throws UnsupportedEncodingException, MessagingException;
+
+	void sendConfirmationEmail(GeneralUser user)
 			throws UnsupportedEncodingException, MessagingException;
+
+	boolean resetPassword(String token, String password);
 }

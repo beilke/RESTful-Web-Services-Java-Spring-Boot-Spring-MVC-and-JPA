@@ -12,7 +12,7 @@ public interface UserRepository extends PagingAndSortingRepository<GeneralUser, 
 	GeneralUser findByEmail(String email);
 
 	GeneralUser findByUserId(String id);
-	
+
 	@Query("SELECT u FROM users u WHERE u.emailVerificationToken = ?1")
 	GeneralUser findByEmailVerificationToken(String token);
 
