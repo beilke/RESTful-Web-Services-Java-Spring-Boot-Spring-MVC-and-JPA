@@ -7,12 +7,11 @@ import javax.mail.MessagingException;
 
 import org.springframework.security.core.userdetails.UserDetailsService;
 
-import br.com.beilke.api.model.GeneralUser;
 import br.com.beilke.api.shared.dto.UserDto;
 
 public interface UserService extends UserDetailsService
 {
-	UserDto createUser(UserDto user, String siteURL) throws UnsupportedEncodingException, MessagingException;
+	UserDto createUser(UserDto user) throws UnsupportedEncodingException, MessagingException;
 
 	UserDto getUser(String email);
 
@@ -26,12 +25,7 @@ public interface UserService extends UserDetailsService
 
 	boolean requestPasswordReset(String email) throws UnsupportedEncodingException, MessagingException;
 
-	void sendVerificationEmail(GeneralUser user) throws UnsupportedEncodingException, MessagingException;
-
 	boolean verify(String verificationCode) throws UnsupportedEncodingException, MessagingException;
-
-	void sendConfirmationEmail(GeneralUser user)
-			throws UnsupportedEncodingException, MessagingException;
 
 	boolean resetPassword(String token, String password);
 }

@@ -7,9 +7,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 class UranusApplicationTests
 {
 
+
 	@Test
 	void contextLoads()
 	{
+
 	}
 
 }

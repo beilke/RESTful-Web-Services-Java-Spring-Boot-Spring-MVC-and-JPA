@@ -3,7 +3,7 @@ package br.com.beilke.api.model.request;
 public class PasswordReset {
 	private String token;
 	private String password;
-	
+
 	public String getToken() {
 		return token;
 	}
@@ -16,7 +16,7 @@ public class PasswordReset {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-	
-	
+
+
 
 }

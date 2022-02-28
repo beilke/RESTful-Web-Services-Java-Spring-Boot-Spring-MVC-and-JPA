@@ -31,7 +31,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.beilke.api.exceptions.UserServiceException;
 import br.com.beilke.api.model.request.PasswordReset;
-import br.com.beilke.api.model.request.PasswordResetRequest;
 import br.com.beilke.api.model.request.UserDetailsRequest;
 import br.com.beilke.api.model.response.AddressesRest;
 import br.com.beilke.api.model.response.ErrorMessages;
@@ -62,11 +61,6 @@ public class UserController {
 		return new ModelMapper().map(userDto, UserRest.class);
 	}
 
-	private String getSiteURL(HttpServletRequest request) {
-		String siteURL = request.getRequestURL().toString();
-		return siteURL.replace(request.getServletPath(), "");
-	}
-
 	@PostMapping(consumes = { MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE }, produces = {
 			MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE })
 	public UserRest createUser(@RequestBody UserDetailsRequest userDetails, HttpServletRequest request)
@@ -75,7 +69,7 @@ public class UserController {
 			throw new UserServiceException(ErrorMessages.MISSING_REQUIRED_FIELD.getErrorMessage());
 
 		UserDto userDto = new ModelMapper().map(userDetails, UserDto.class);
-		UserDto createdUser = userService.createUser(userDto, getSiteURL(request));
+		UserDto createdUser = userService.createUser(userDto);
 
 		return new ModelMapper().map(createdUser, UserRest.class);
 	}
@@ -164,7 +158,7 @@ public class UserController {
 
 		return EntityModel.of(returnValue, Arrays.asList(userLink, userAddressesLink, selfLink));
 	}
-	
+
 	// http://localhost:8080/uranus/users/verify?code=?
 	@GetMapping(path = "/verify")
 	public OperationStatus verifyUser(@Param("code") String code)
@@ -194,7 +188,7 @@ public class UserController {
 
 		return returnValue;
 	}
-	
+
 	//http://localhost:8080/uranus/users/password-reset
 	@CrossOrigin(origins = "http://localhost:8080")
 	@PostMapping(path = "/password-reset", consumes = { MediaType.APPLICATION_XML_VALUE,

@@ -5,15 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -27,6 +24,7 @@ import br.com.beilke.api.model.response.ErrorMessages;
 import br.com.beilke.api.repositories.PasswordResetTokenRepository;
 import br.com.beilke.api.repositories.UserRepository;
 import br.com.beilke.api.security.SecurityConstants;
+import br.com.beilke.api.service.MailService;
 import br.com.beilke.api.service.UserService;
 import br.com.beilke.api.shared.Utils;
 import br.com.beilke.api.shared.dto.AddressDTO;
@@ -44,13 +42,13 @@ public class UserServiceImpl implements UserService {
 	Utils utils;
 
 	@Autowired
-	BCryptPasswordEncoder bCryptPasswordEncoder;
+	MailService mailService;
 
 	@Autowired
-	private JavaMailSender mailSender;
+	BCryptPasswordEncoder bCryptPasswordEncoder;
 
 	@Override
-	public UserDto createUser(UserDto user, String siteURL) throws UnsupportedEncodingException, MessagingException {
+	public UserDto createUser(UserDto user) throws UnsupportedEncodingException, MessagingException {
 		if (userRepository.findByEmail(user.getEmail()) != null)
 			throw new UserServiceException(ErrorMessages.RECORD_ALREADY_EXISTS.getErrorMessage());
 
@@ -72,7 +70,10 @@ public class UserServiceImpl implements UserService {
 
 		GeneralUser storedUserDetails = userRepository.save(userEntity);
 
-		sendVerificationEmail(userEntity);
+		mailService.send(userEntity, SecurityConstants.EMAIL_VERIFICATION_BODY,
+				SecurityConstants.EMAIL_VERIFICATION_SUBJECT,
+				SecurityConstants.EMAIL_VERIFICATION_URL + user.getEmailVerificationToken());
+
 
 		return new ModelMapper().map(storedUserDetails, UserDto.class);
 	}
@@ -165,57 +166,15 @@ public class UserServiceImpl implements UserService {
 		passwordResetToken.setToken(token);
 		passwordResetToken.setUserDetails(userEntity);
 		passwordResetTokenRepository.save(passwordResetToken);
-		
-		MimeMessage message = buildEmail(userEntity,
-				SecurityConstants.EMAIL_PASSWORD_RESET_BODY,
-				SecurityConstants.EMAIL_PASSWORD_RESET_SUBJECT,
-				SecurityConstants.EMAIL_PASSWORD_RESET_URL + token);
 
-		mailSender.send(message);
+		mailService.send(userEntity, SecurityConstants.EMAIL_CONFIRMATION_BODY,
+				SecurityConstants.EMAIL_CONFIRMATION_SUBJECT, SecurityConstants.EMAIL_CONFIRMATION_URL + token);
+
 
 		return returnValue;
 	}
 
-	@Override
-	public void sendVerificationEmail(GeneralUser user)
-			throws UnsupportedEncodingException, MessagingException {
-		MimeMessage message = buildEmail(user,
-				SecurityConstants.EMAIL_VERIFICATION_BODY,
-				SecurityConstants.EMAIL_VERIFICATION_SUBJECT,
-				SecurityConstants.EMAIL_VERIFICATION_URL + user.getEmailVerificationToken());
 
-		mailSender.send(message);
-	}
-
-	@Override
-	public void sendConfirmationEmail(GeneralUser user)
-			throws UnsupportedEncodingException, MessagingException {
-		MimeMessage message = buildEmail(user,
-				SecurityConstants.EMAIL_CONFIRMATION_BODY,
-				SecurityConstants.EMAIL_CONFIRMATION_SUBJECT,
-				SecurityConstants.EMAIL_CONFIRMATION_URL);
-
-		mailSender.send(message);
-
-	}
-
-	private MimeMessage buildEmail(GeneralUser user, String content, String subject, String verifyURL)
-			throws MessagingException, UnsupportedEncodingException {
-		String toAddress = user.getEmail();
-
-		MimeMessage message = mailSender.createMimeMessage();
-		MimeMessageHelper helper = new MimeMessageHelper(message);
-
-		helper.setFrom(SecurityConstants.EMAIL_FROMADDR, SecurityConstants.EMAIL_SENDER);
-		helper.setTo(toAddress);
-		helper.setSubject(subject);
-
-		content = content.replace("[[name]]", user.getFullName());
-		content = content.replace("[[URL]]", verifyURL);
-
-		helper.setText(content, true);
-		return message;
-	}
 
 	@Override
 	public boolean verify(String verificationCode)
@@ -227,7 +186,9 @@ public class UserServiceImpl implements UserService {
 			user.setEmailVerificationToken(null);
 			user.setEmailVerificationStatus(true);
 			userRepository.save(user);
-			sendConfirmationEmail(user);
+			mailService.send(user, SecurityConstants.EMAIL_CONFIRMATION_BODY,
+					SecurityConstants.EMAIL_CONFIRMATION_SUBJECT, SecurityConstants.EMAIL_CONFIRMATION_URL);
+
 			isVerified = true;
 		}
 
@@ -237,31 +198,31 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public boolean resetPassword(String token, String password) {
 		boolean returnValue = false;
-		
+
 		if(Utils.hasTokenExpired(token))
 			return returnValue;
-		
+
 		PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(token);
-		
+
 		if(passwordResetToken == null) {
 			return returnValue;
 		}
-		
+
 		// Prepare de password
 		String encodedPassword = bCryptPasswordEncoder.encode(password);
-		
+
 		// Update user password
 		GeneralUser userEntity = passwordResetToken.getUserDetails();
 		userEntity.setEncryptedPassword(encodedPassword);
 		GeneralUser storedUserDetails = userRepository.save(userEntity);
-		
+
 		// Verify if password was saved
 		if(storedUserDetails != null && storedUserDetails.getEncryptedPassword().equalsIgnoreCase(encodedPassword))
 			returnValue = true;
-		
+
 		// Remove password reset token from database
 		passwordResetTokenRepository.delete(passwordResetToken);
-		
+
 		return returnValue;
 	}
 
